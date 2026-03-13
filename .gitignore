@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.venv/
+.pycache/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.coverage
+.DS_Store
+.env
