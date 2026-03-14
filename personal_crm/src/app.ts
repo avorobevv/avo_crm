@@ -111,6 +111,7 @@ const ContactSchema = Type.Object({
   preferredContactMethod: NullableContactMethodSchema,
   priority: NullablePrioritySchema,
   notes: NullableStringSchema,
+  linkedinUrl: NullableStringSchema,
   createdAt: Type.String({ format: 'date-time' }),
   updatedAt: Type.String({ format: 'date-time' }),
   lastInteractionSummary: NullableStringSchema,
@@ -137,6 +138,7 @@ const CreateContactBodySchema = Type.Object({
   priority: Type.Optional(PrioritySchema),
   notes: Type.Optional(Type.String({ maxLength: 2000 })),
   lastInteractionSummary: Type.Optional(Type.String({ maxLength: 280 })),
+  linkedinUrl: Type.Optional(Type.String({ format: 'uri' })),
 });
 
 type CreateContactBody = Static<typeof CreateContactBodySchema>;
@@ -159,6 +161,7 @@ const UpdateContactBodySchema = Type.Object({
   priority: Type.Optional(NullablePrioritySchema),
   notes: Type.Optional(NullableStringSchema),
   lastInteractionSummary: Type.Optional(NullableStringSchema),
+  linkedinUrl: Type.Optional(NullableStringSchema),
 });
 
 type UpdateContactBody = Static<typeof UpdateContactBodySchema>;
@@ -212,6 +215,7 @@ type ContactRow = {
   preferred_contact_method: ContactMethod | null;
   priority: Priority | null;
   notes: string | null;
+  linkedin_url: string | null;
   created_at: string;
   updated_at: string;
   last_interaction_summary: string | null;
@@ -419,6 +423,7 @@ function initDatabase(databasePath: string): DatabaseSync {
       preferred_contact_method TEXT,
       priority TEXT,
       notes TEXT,
+      linkedin_url TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       last_interaction_summary TEXT
@@ -441,6 +446,12 @@ function initDatabase(databasePath: string): DatabaseSync {
     CREATE INDEX IF NOT EXISTS contact_interactions_contact_id_idx
       ON contact_interactions(contact_id, interaction_date DESC, created_at DESC);
   `);
+
+  try {
+    database.exec("ALTER TABLE contacts ADD COLUMN linkedin_url TEXT;");
+  } catch {
+    // Column might already exist
+  }
 
   return database;
 }
@@ -490,6 +501,7 @@ function mapContactRow(row: ContactRow, interactions: Interaction[]): Contact {
     preferredContactMethod: row.preferred_contact_method,
     priority: row.priority,
     notes: row.notes,
+    linkedinUrl: row.linkedin_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastInteractionSummary: row.last_interaction_summary,
@@ -540,6 +552,7 @@ function listContacts(database: DatabaseSync): Contact[] {
           preferred_contact_method,
           priority,
           notes,
+          linkedin_url,
           created_at,
           updated_at,
           last_interaction_summary
@@ -572,6 +585,7 @@ function getContact(database: DatabaseSync, contactId: string): Contact | null {
           preferred_contact_method,
           priority,
           notes,
+          linkedin_url,
           created_at,
           updated_at,
           last_interaction_summary
@@ -651,11 +665,12 @@ function createContact(database: DatabaseSync, body: CreateContactBody): Contact
           preferred_contact_method,
           priority,
           notes,
+          linkedin_url,
           created_at,
           updated_at,
           last_interaction_summary
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
     )
     .run(
@@ -674,6 +689,7 @@ function createContact(database: DatabaseSync, body: CreateContactBody): Contact
       body.preferredContactMethod ?? null,
       body.priority ?? null,
       optionalText(body.notes),
+      optionalText(body.linkedinUrl),
       now,
       now,
       lastInteractionSummary,
@@ -753,6 +769,7 @@ function updateContact(
       body.lastInteractionSummary === undefined
         ? current.lastInteractionSummary
         : optionalText(body.lastInteractionSummary),
+    linkedinUrl: body.linkedinUrl === undefined ? current.linkedinUrl : optionalText(body.linkedinUrl),
   };
 
   database
@@ -774,6 +791,7 @@ function updateContact(
           preferred_contact_method = ?,
           priority = ?,
           notes = ?,
+          linkedin_url = ?,
           updated_at = ?,
           last_interaction_summary = ?
         WHERE id = ?
@@ -794,6 +812,7 @@ function updateContact(
       updated.preferredContactMethod,
       updated.priority,
       updated.notes,
+      updated.linkedinUrl,
       now,
       updated.lastInteractionSummary,
       contactId,

@@ -366,6 +366,29 @@ export function renderCrmPage(): string {
         gap: 14px;
       }
 
+      .linkedin-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #0077b5;
+        color: white;
+        transition: transform 160ms ease, opacity 160ms ease;
+      }
+
+      .linkedin-link:hover {
+        transform: scale(1.05);
+        opacity: 0.9;
+      }
+
+      .linkedin-link svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+
       .contact-card {
         border-radius: 22px;
         padding: 18px;
@@ -746,6 +769,13 @@ export function renderCrmPage(): string {
                   </select>
                 </label>
                 <label>
+                  LinkedIn URL
+                  <input name="linkedinUrl" type="url" placeholder="https://linkedin.com/in/username" />
+                </label>
+              </div>
+
+              <div class="field-grid">
+                <label>
                   Priority
                   <select name="priority">
                     <option value="">Select one</option>
@@ -1099,9 +1129,18 @@ export function renderCrmPage(): string {
           '<div class="detail-shell">' +
             '<div class="detail-header">' +
               "<div>" +
-                "<h3>" +
-                escapeHtml(contact.fullName) +
-                "</h3>" +
+                '<div style="display: flex; align-items: center; gap: 12px;">' +
+                  "<h3>" +
+                  escapeHtml(contact.fullName) +
+                  "</h3>" +
+                  (contact.linkedinUrl
+                    ? '<a href="' +
+                      escapeHtml(contact.linkedinUrl) +
+                      '" target="_blank" rel="noopener noreferrer" class="linkedin-link" title="LinkedIn Profile">' +
+                      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>' +
+                      "</a>"
+                    : "") +
+                "</div>" +
                 '<div class="detail-subtitle">' +
                 escapeHtml([contact.title, contact.company].filter(Boolean).join(" at ") || "Relationship CRM record") +
                 "</div>" +
@@ -1207,6 +1246,9 @@ export function renderCrmPage(): string {
                       (contact.priority === "low" ? ' selected="selected"' : "") +
                     '>Low</option>' +
                   "</select></label>" +
+                  '<label>LinkedIn URL<input name="linkedinUrl" type="url" value="' +
+                    escapeHtml(contact.linkedinUrl || "") +
+                    '" placeholder="https://linkedin.com/in/username" /></label>' +
                 "</div>" +
                 '<label>Last interaction summary<input name="lastInteractionSummary" maxlength="280" value="' +
                   escapeHtml(contact.lastInteractionSummary || "") +
@@ -1312,6 +1354,7 @@ export function renderCrmPage(): string {
           priority: String(formData.get("priority") || "").trim(),
           notes: String(formData.get("notes") || "").trim(),
           lastInteractionSummary: String(formData.get("lastInteractionSummary") || "").trim(),
+          linkedinUrl: String(formData.get("linkedinUrl") || "").trim(),
           connectionTypes: formData.getAll("connectionTypes").map(String),
         };
 
