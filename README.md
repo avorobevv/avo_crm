@@ -44,6 +44,10 @@ personal_crm/
 - **Validation**: TypeBox
 - **Frontend**: Server-rendered HTML with vanilla JS
 
+"Cannot find module '.../dist/server.js'": This occurs if you run personal-crm without building the project. Use personal-crm dev instead, or run npm run build first.
+
+node:sqlite errors: Ensure you are running Node v22+ by checking node -v.
+
 ## License
 
 MIT
