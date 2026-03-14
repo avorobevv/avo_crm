@@ -348,6 +348,19 @@ export function renderCrmPage(): string {
         color: var(--muted);
       }
 
+      .search-box {
+        position: relative;
+        flex: 1;
+        max-width: 320px;
+      }
+
+      .search-box input {
+        padding-left: 40px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23626d7f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: 14px center;
+      }
+
       .list {
         display: grid;
         gap: 14px;
@@ -787,6 +800,9 @@ export function renderCrmPage(): string {
                 <h2>Relationship Board</h2>
                 <p>Contacts are sorted by next follow-up so your warmest next actions stay visible.</p>
               </div>
+              <div class="search-box">
+                <input type="text" id="contact-search" placeholder="Search by name, company, email..." aria-label="Search contacts" />
+              </div>
             </div>
             <div class="list" id="contact-list"></div>
             <div class="empty-state hidden" id="empty-state">
@@ -804,6 +820,7 @@ export function renderCrmPage(): string {
         selectedContactId: null,
         detailMessage: "",
         detailTone: "",
+        searchQuery: "",
       };
 
       const form = document.getElementById("contact-form");
@@ -813,6 +830,7 @@ export function renderCrmPage(): string {
       const emptyState = document.getElementById("empty-state");
       const detailPanel = document.getElementById("detail-panel");
       const statNodes = document.querySelectorAll("[data-stat]");
+      const searchInput = document.getElementById("contact-search");
 
       const formatDate = (value) => {
         if (!value) {
@@ -884,6 +902,21 @@ export function renderCrmPage(): string {
       const selectedContact = () =>
         state.contacts.find((contact) => contact.id === state.selectedContactId) || null;
 
+      const filteredContacts = () => {
+        const query = state.searchQuery.toLowerCase().trim();
+        if (!query) {
+          return state.contacts;
+        }
+
+        return state.contacts.filter((contact) => {
+          return (
+            contact.fullName.toLowerCase().includes(query) ||
+            (contact.company && contact.company.toLowerCase().includes(query)) ||
+            (contact.email && contact.email.toLowerCase().includes(query))
+          );
+        });
+      };
+
       const buildConnectionCheckboxes = (selected) => {
         const values = selected || [];
         const options = [
@@ -914,10 +947,19 @@ export function renderCrmPage(): string {
       };
 
       const renderBoard = () => {
+        const list = filteredContacts();
         contactList.innerHTML = "";
-        emptyState.classList.toggle("hidden", state.contacts.length > 0);
+        emptyState.classList.toggle("hidden", state.contacts.length > 0 || state.searchQuery.length > 0);
 
-        state.contacts.forEach((contact) => {
+        if (list.length === 0 && state.searchQuery.length > 0) {
+          const emptyResults = document.createElement("div");
+          emptyResults.className = "empty-state";
+          emptyResults.innerHTML = "<h3>No matches found</h3><p>Try a different search term.</p>";
+          contactList.appendChild(emptyResults);
+          return;
+        }
+
+        list.forEach((contact) => {
           const card = document.createElement("article");
           const due = dueState(contact.nextContactAt);
           const metaLine = [contact.title, contact.company].filter(Boolean).join(" at ");
@@ -1330,6 +1372,11 @@ export function renderCrmPage(): string {
           submitButton.disabled = false;
           submitButton.textContent = "Save contact";
         }
+      });
+
+      searchInput.addEventListener("input", (event) => {
+        state.searchQuery = event.target.value;
+        renderBoard();
       });
 
       contactList.addEventListener("click", async (event) => {
