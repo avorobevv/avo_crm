@@ -12,30 +12,31 @@ After adding the project’s `bin` directory to your PATH, you can start the CRM
 Clone the repository:
 
 ```bash
-git clone https://github.com/avorobev/avo_crm.git
-cd avo_crm
+   git clone [https://github.com/avorobevv/avo_crm.git](https://github.com/avorobevv/avo_crm.git)
+   cd avo_crm/personal_crm
+```
+
+Install dependencies:
+```bash
+npm install
 ```
 
 Add the project's `bin` directory to your shell PATH:
 
 ```bash
-echo 'export PATH="/Users/avorobev/projects/personal_crm/bin:$PATH"' >> ~/.zshrc
+echo "export PATH=\"$(pwd)/bin:\$PATH\"" >> ~/.zshrc
 source ~/.zshrc
 ```
 
 ## Usage
 
-Once the PATH is configured, you can launch the CRM from anywhere:
+Once the PATH is configured, you can launch the CRM from anywhere in your terminal:
 
 ```bash
-personal-crm
+personal-crm dev
 ```
 
-This command runs the executable script located in:
-
-```
-bin/personal-crm
-```
+The application will be accessible at http://127.0.0.1:8000.
 
 ## Project Structure
 
@@ -49,10 +50,11 @@ personal_crm/
 
 ## Requirements
 
+- Node.js (v22.0.0 or higher)
 - macOS / Linux terminal
 - zsh or compatible shell
 
-## Notes
+## Troubleshooting
 
 If the command is not recognized, confirm your PATH is updated:
 
@@ -65,6 +67,10 @@ You should see:
 ```
 /Users/avorobev/projects/personal_crm/bin
 ```
+
+"Cannot find module '.../dist/server.js'": This occurs if you run personal-crm without building the project. Use personal-crm dev instead, or run npm run build first.
+
+node:sqlite errors: Ensure you are running Node v22+ by checking node -v.
 
 ## License
 
