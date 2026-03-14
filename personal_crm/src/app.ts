@@ -9,6 +9,8 @@ import { Type, type Static } from '@sinclair/typebox';
 
 import { renderCrmPage } from './frontend.js';
 
+// ─── Enum Options ────────────────────────────────────────────────────────────
+
 const connectionOptions = [
   'friend',
   'family friend',
@@ -22,6 +24,8 @@ const contactMethodOptions = ['email', 'phone', 'text', 'social', 'in-person'] a
 const nextContactSourceOptions = ['manual', 'suggested'] as const;
 
 type Nullable<T> = T | null;
+
+// ─── API & Response Schemas ──────────────────────────────────────────────────
 
 const HealthResponseSchema = Type.Object({
   status: Type.Literal('ok'),
@@ -86,6 +90,8 @@ const NullablePrioritySchema = Type.Union([
   ...priorityOptions.map((opt) => Type.Literal(opt)),
   Type.Null(),
 ]);
+
+// ─── Contact & Interaction Schemas ───────────────────────────────────────────
 
 const InteractionSchema = Type.Object({
   id: Type.String(),
@@ -208,6 +214,8 @@ const InteractionMutationResponseSchema = Type.Object({
 
 type InteractionMutationResponse = Static<typeof InteractionMutationResponseSchema>;
 
+// ─── Database Row Types ──────────────────────────────────────────────────────
+
 type ContactRow = {
   id: string;
   first_name: string;
@@ -247,6 +255,8 @@ type NextTouchpoint = {
   nextContactSource: NextContactSource;
   suggestedCadenceDays: number | null;
 };
+
+// ─── Utility Helpers ─────────────────────────────────────────────────────────
 
 function optionalText(value?: string | null): string | null {
   const trimmed = value?.trim();
@@ -426,6 +436,8 @@ function optionalDate(value?: string | null): string | null {
   return null;
 }
 
+// ─── Database Initialization ─────────────────────────────────────────────────
+
 function resolveDatabasePath(): string {
   const configured = process.env.DATABASE_PATH?.trim();
   return resolve(configured && configured.length > 0 ? configured : 'data/crm.sqlite');
@@ -495,6 +507,8 @@ function initDatabase(databasePath: string): DatabaseSync {
   return database;
 }
 
+// ─── CSV Helpers ─────────────────────────────────────────────────────────────
+
 function escapeCsv(value: string | null | undefined): string {
   if (value === null || value === undefined) return "";
   const str = String(value);
@@ -561,6 +575,8 @@ function parseConnectionTypes(serialized: string): ConnectionType[] {
     connectionOptions.includes(value as ConnectionType),
   );
 }
+
+// ─── Row Mappers & Data Access ───────────────────────────────────────────────
 
 function mapInteractionRow(row: InteractionRow): Interaction {
   return {
@@ -721,6 +737,8 @@ function getInteraction(database: DatabaseSync, interactionId: string): Interact
 
   return row ? mapInteractionRow(row) : null;
 }
+
+// ─── Contact CRUD ────────────────────────────────────────────────────────────
 
 function createContact(database: DatabaseSync, body: CreateContactBody): Contact {
   const id = generateId('contact');
@@ -1024,6 +1042,8 @@ function logInteraction(
   };
 }
 
+// ─── API Routes (Fastify App) ────────────────────────────────────────────────
+
 export function buildApp() {
   const database = initDatabase(resolveDatabasePath());
 
@@ -1287,6 +1307,12 @@ export function buildApp() {
             properties: {
               successCount: { type: "number" },
               errorCount: { type: "number" },
+              message: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
               message: { type: "string" },
             },
           },
