@@ -78,8 +78,14 @@ const NullableDateSchema = Type.Union([Type.String({ format: 'date' }), Type.Nul
 const NullableEmailSchema = Type.Union([Type.String({ format: 'email' }), Type.Null()]);
 const NullableNumberSchema = Type.Union([Type.Number(), Type.Null()]);
 const NullableStringSchema = Type.Union([Type.String(), Type.Null()]);
-const NullableContactMethodSchema = Type.Union([ContactMethodSchema, Type.Null()]);
-const NullablePrioritySchema = Type.Union([PrioritySchema, Type.Null()]);
+const NullableContactMethodSchema = Type.Union([
+  ...contactMethodOptions.map((opt) => Type.Literal(opt)),
+  Type.Null(),
+]);
+const NullablePrioritySchema = Type.Union([
+  ...priorityOptions.map((opt) => Type.Literal(opt)),
+  Type.Null(),
+]);
 
 const InteractionSchema = Type.Object({
   id: Type.String(),
@@ -116,6 +122,7 @@ const ContactSchema = Type.Object({
   updatedAt: Type.String({ format: 'date-time' }),
   lastInteractionSummary: NullableStringSchema,
   interactionHistory: Type.Array(InteractionSchema),
+  tags: Type.Array(Type.String()),
 });
 
 type Contact = Static<typeof ContactSchema>;
@@ -139,6 +146,7 @@ const CreateContactBodySchema = Type.Object({
   notes: Type.Optional(Type.String({ maxLength: 2000 })),
   lastInteractionSummary: Type.Optional(Type.String({ maxLength: 280 })),
   linkedinUrl: Type.Optional(Type.String({ format: 'uri' })),
+  tags: Type.Optional(Type.Array(Type.String({ maxLength: 15 }), { maxItems: 20 })),
 });
 
 type CreateContactBody = Static<typeof CreateContactBodySchema>;
@@ -162,6 +170,7 @@ const UpdateContactBodySchema = Type.Object({
   notes: Type.Optional(NullableStringSchema),
   lastInteractionSummary: Type.Optional(NullableStringSchema),
   linkedinUrl: Type.Optional(NullableStringSchema),
+  tags: Type.Optional(Type.Array(Type.String({ maxLength: 15 }), { maxItems: 20 })),
 });
 
 type UpdateContactBody = Static<typeof UpdateContactBodySchema>;
@@ -219,6 +228,7 @@ type ContactRow = {
   created_at: string;
   updated_at: string;
   last_interaction_summary: string | null;
+  tags: string;
 };
 
 type InteractionRow = {
@@ -243,6 +253,12 @@ function optionalText(value?: string | null): string | null {
   return trimmed ? trimmed : null;
 }
 
+function normalizeEnum<T extends string>(value: string | null | undefined, options: readonly T[]): T | null {
+  const trimmed = value?.trim().toLowerCase();
+  if (!trimmed) return null;
+  return options.includes(trimmed as T) ? (trimmed as T) : null;
+}
+
 function normalizeConnectionTypes(values?: ConnectionType[]): ConnectionType[] {
   return [...new Set(values ?? [])].sort();
 }
@@ -257,6 +273,10 @@ function daysFromNow(days: number): Date {
   const base = startOfToday();
   base.setDate(base.getDate() + days);
   return base;
+}
+
+function normalizeTags(values?: string[]): string[] {
+  return [...new Set((values ?? []).map(t => t.trim()).filter(t => t.length > 0 && t.length <= 15))];
 }
 
 function isDateInRange(value: string | null, start: Date, end: Date): boolean {
@@ -394,6 +414,18 @@ function resolveNextTouchpoint(
   };
 }
 
+function optionalDate(value?: string | null): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed === "null" || trimmed === "undefined") {
+    return null;
+  }
+  // Very basic check for YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
 function resolveDatabasePath(): string {
   const configured = process.env.DATABASE_PATH?.trim();
   return resolve(configured && configured.length > 0 ? configured : 'data/crm.sqlite');
@@ -426,7 +458,8 @@ function initDatabase(databasePath: string): DatabaseSync {
       linkedin_url TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      last_interaction_summary TEXT
+      last_interaction_summary TEXT,
+      tags TEXT NOT NULL DEFAULT '[]'
     );
 
     CREATE TABLE IF NOT EXISTS contact_interactions (
@@ -453,7 +486,69 @@ function initDatabase(databasePath: string): DatabaseSync {
     // Column might already exist
   }
 
+  try {
+    database.exec("ALTER TABLE contacts ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'");
+  } catch {
+    // Column might already exist
+  }
+
   return database;
+}
+
+function escapeCsv(value: string | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  const str = String(value);
+  if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function parseCsv(content: string): string[][] {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    const nextChar = content[i + 1];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (nextChar === '"') {
+          currentField += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        currentField += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ",") {
+        currentRow.push(currentField);
+        currentField = "";
+      } else if (char === "\n" || char === "\r") {
+        if (char === "\r" && nextChar === "\n") i++;
+        currentRow.push(currentField);
+        rows.push(currentRow);
+        currentRow = [];
+        currentField = "";
+      } else {
+        currentField += char;
+      }
+    }
+  }
+
+  if (currentRow.length > 0 || currentField !== "") {
+    currentRow.push(currentField);
+    rows.push(currentRow);
+  }
+
+  return rows;
 }
 
 function parseConnectionTypes(serialized: string): ConnectionType[] {
@@ -472,9 +567,9 @@ function mapInteractionRow(row: InteractionRow): Interaction {
     id: row.id,
     contactId: row.contact_id,
     interactionDate: row.interaction_date,
-    summary: row.summary,
-    nextContactAt: row.next_contact_at,
-    nextContactSource: row.next_contact_source,
+    summary: optionalText(row.summary),
+    nextContactAt: optionalDate(row.next_contact_at),
+    nextContactSource: normalizeEnum(row.next_contact_source, nextContactSourceOptions) || 'manual',
     suggestedCadenceDays: row.suggested_cadence_days,
     createdAt: row.created_at,
   };
@@ -489,23 +584,24 @@ function mapContactRow(row: ContactRow, interactions: Interaction[]): Contact {
     firstName,
     lastName,
     fullName: `${firstName} ${lastName}`,
-    birthdate: row.birthdate,
-    lastContactedAt: row.last_contacted_at,
-    nextContactAt: row.next_contact_at,
+    birthdate: optionalDate(row.birthdate),
+    lastContactedAt: optionalDate(row.last_contacted_at),
+    nextContactAt: optionalDate(row.next_contact_at),
     connectionTypes: parseConnectionTypes(row.connection_types),
-    company: row.company,
-    title: row.title,
-    email: row.email,
-    phone: row.phone,
-    location: row.location,
-    preferredContactMethod: row.preferred_contact_method,
-    priority: row.priority,
-    notes: row.notes,
-    linkedinUrl: row.linkedin_url,
+    company: optionalText(row.company),
+    title: optionalText(row.title),
+    email: optionalText(row.email),
+    phone: optionalText(row.phone),
+    location: optionalText(row.location),
+    preferredContactMethod: normalizeEnum(row.preferred_contact_method, contactMethodOptions),
+    priority: normalizeEnum(row.priority, priorityOptions),
+    notes: optionalText(row.notes),
+    linkedinUrl: optionalText(row.linkedin_url),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    lastInteractionSummary: row.last_interaction_summary,
+    lastInteractionSummary: optionalText(row.last_interaction_summary),
     interactionHistory: interactions,
+    tags: JSON.parse(row.tags || '[]'),
   };
 }
 
@@ -555,7 +651,8 @@ function listContacts(database: DatabaseSync): Contact[] {
           linkedin_url,
           created_at,
           updated_at,
-          last_interaction_summary
+          last_interaction_summary,
+          tags
         FROM contacts
         ORDER BY COALESCE(next_contact_at, '9999-12-31') ASC, first_name ASC, last_name ASC
       `,
@@ -588,7 +685,8 @@ function getContact(database: DatabaseSync, contactId: string): Contact | null {
           linkedin_url,
           created_at,
           updated_at,
-          last_interaction_summary
+          last_interaction_summary,
+          tags
         FROM contacts
         WHERE id = ?
       `,
@@ -635,16 +733,16 @@ function createContact(database: DatabaseSync, body: CreateContactBody): Contact
   const nextTouchpoint =
     body.lastContactedAt !== undefined
       ? resolveNextTouchpoint(
-          body.lastContactedAt,
-          body.nextContactAt,
-          connectionTypes,
-          body.priority ?? null,
-        )
+        body.lastContactedAt,
+        body.nextContactAt,
+        connectionTypes,
+        normalizeEnum(body.priority, priorityOptions),
+      )
       : {
-          nextContactAt: body.nextContactAt ?? null,
-          nextContactSource: 'manual' as const,
-          suggestedCadenceDays: null,
-        };
+        nextContactAt: body.nextContactAt ?? null,
+        nextContactSource: 'manual' as const,
+        suggestedCadenceDays: null,
+      };
 
   database
     .prepare(
@@ -668,31 +766,33 @@ function createContact(database: DatabaseSync, body: CreateContactBody): Contact
           linkedin_url,
           created_at,
           updated_at,
-          last_interaction_summary
+          last_interaction_summary,
+          tags
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
     )
     .run(
       id,
       firstName,
       lastName,
-      body.birthdate ?? null,
-      body.lastContactedAt ?? null,
-      nextTouchpoint.nextContactAt,
+      optionalDate(body.birthdate),
+      optionalDate(body.lastContactedAt),
+      optionalDate(nextTouchpoint.nextContactAt),
       JSON.stringify(connectionTypes),
       optionalText(body.company),
       optionalText(body.title),
       optionalText(body.email),
       optionalText(body.phone),
       optionalText(body.location),
-      body.preferredContactMethod ?? null,
-      body.priority ?? null,
+      normalizeEnum(body.preferredContactMethod, contactMethodOptions),
+      normalizeEnum(body.priority, priorityOptions),
       optionalText(body.notes),
       optionalText(body.linkedinUrl),
       now,
       now,
       lastInteractionSummary,
+      JSON.stringify(normalizeTags(body.tags)),
     );
 
   if (body.lastContactedAt) {
@@ -746,10 +846,10 @@ function updateContact(
   const updated = {
     firstName: body.firstName?.trim() ?? current.firstName,
     lastName: body.lastName?.trim() ?? current.lastName,
-    birthdate: body.birthdate === undefined ? current.birthdate : body.birthdate,
+    birthdate: body.birthdate === undefined ? current.birthdate : optionalDate(body.birthdate),
     lastContactedAt:
-      body.lastContactedAt === undefined ? current.lastContactedAt : body.lastContactedAt,
-    nextContactAt: body.nextContactAt === undefined ? current.nextContactAt : body.nextContactAt,
+      body.lastContactedAt === undefined ? current.lastContactedAt : optionalDate(body.lastContactedAt),
+    nextContactAt: body.nextContactAt === undefined ? current.nextContactAt : optionalDate(body.nextContactAt),
     connectionTypes:
       body.connectionTypes === undefined
         ? current.connectionTypes
@@ -762,14 +862,15 @@ function updateContact(
     preferredContactMethod:
       body.preferredContactMethod === undefined
         ? current.preferredContactMethod
-        : body.preferredContactMethod,
-    priority: body.priority === undefined ? current.priority : body.priority,
+        : normalizeEnum(body.preferredContactMethod, contactMethodOptions),
+    priority: body.priority === undefined ? current.priority : normalizeEnum(body.priority, priorityOptions),
     notes: body.notes === undefined ? current.notes : optionalText(body.notes),
     lastInteractionSummary:
       body.lastInteractionSummary === undefined
         ? current.lastInteractionSummary
         : optionalText(body.lastInteractionSummary),
     linkedinUrl: body.linkedinUrl === undefined ? current.linkedinUrl : optionalText(body.linkedinUrl),
+    tags: body.tags === undefined ? current.tags : normalizeTags(body.tags),
   };
 
   database
@@ -793,7 +894,8 @@ function updateContact(
           notes = ?,
           linkedin_url = ?,
           updated_at = ?,
-          last_interaction_summary = ?
+          last_interaction_summary = ?,
+          tags = ?
         WHERE id = ?
       `,
     )
@@ -815,6 +917,7 @@ function updateContact(
       updated.linkedinUrl,
       now,
       updated.lastInteractionSummary,
+      JSON.stringify(updated.tags),
       contactId,
     );
 
@@ -1104,6 +1207,163 @@ export function buildApp() {
       }
 
       return reply.code(201).send(result);
+    },
+  );
+
+  app.get(
+    "/api/contacts/export",
+    {
+      schema: {
+        tags: ["contacts"],
+        summary: "Export all contacts to CSV",
+        response: {
+          200: { type: "string" },
+        },
+      },
+    },
+    async (request, reply) => {
+      const contacts = listContacts(database);
+      const headers = [
+        "First Name",
+        "Last Name",
+        "Email",
+        "Company",
+        "Title",
+        "Phone",
+        "Location",
+        "Birthdate",
+        "Last Contacted",
+        "Next Contact",
+        "Connection Types",
+        "Priority",
+        "Contact Method",
+        "LinkedIn URL",
+        "Notes",
+        "Tags",
+      ];
+
+      const rows = contacts.map((c) =>
+        [
+          c.firstName,
+          c.lastName,
+          c.email,
+          c.company,
+          c.title,
+          c.phone,
+          c.location,
+          c.birthdate,
+          c.lastContactedAt,
+          c.nextContactAt,
+          (c.connectionTypes || []).join(";"),
+          c.priority,
+          c.preferredContactMethod,
+          c.linkedinUrl,
+          c.notes,
+          (c.tags || []).join(";"),
+        ]
+          .map(escapeCsv)
+          .join(","),
+      );
+
+      const csv = [headers.join(","), ...rows].join("\n");
+
+      return reply
+        .header("Content-Type", "text/csv")
+        .header("Content-Disposition", 'attachment; filename="contacts.csv"')
+        .send(csv);
+    },
+  );
+
+  app.post(
+    "/api/contacts/import",
+    {
+      schema: {
+        tags: ["contacts"],
+        summary: "Import contacts from CSV",
+        body: { type: "object", properties: { csv: { type: "string" } }, required: ["csv"] },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              successCount: { type: "number" },
+              errorCount: { type: "number" },
+              message: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { csv } = request.body as { csv: string };
+      const rows = parseCsv(csv);
+
+      if (rows.length < 2) {
+        return reply.code(400).send({ message: "CSV is empty or missing header" } as any);
+      }
+
+      const headers = rows[0]!.map((h: string) => h.trim().toLowerCase());
+      const dataRows = rows.slice(1);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const row of dataRows) {
+        if (row.length < 2) continue; // Skip empty rows
+
+        const getVal = (name: string) => {
+          const idx = headers.indexOf(name.toLowerCase());
+          return idx > -1 ? row[idx] : null;
+        };
+
+        const firstName = getVal("first name") || getVal("firstName");
+        const lastName = getVal("last name") || getVal("lastName");
+
+        if (!firstName || !lastName) {
+          errorCount++;
+          continue;
+        }
+
+        const connectionTypesRaw = getVal("connection types") || getVal("connectionTypes");
+        const connectionTypes = connectionTypesRaw
+          ? connectionTypesRaw
+            .split(";")
+            .map((s: string) => s.trim().toLowerCase())
+            .filter(Boolean)
+          : [];
+
+        const payload: CreateContactBody = {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: optionalText(getVal("email")) || undefined,
+          company: optionalText(getVal("company")) || undefined,
+          title: optionalText(getVal("title")) || undefined,
+          phone: optionalText(getVal("phone")) || undefined,
+          location: optionalText(getVal("location")) || undefined,
+          birthdate: optionalDate(getVal("birthdate")) || undefined,
+          lastContactedAt: optionalDate(getVal("last contacted") || getVal("lastContactedAt")) || undefined,
+          nextContactAt: optionalDate(getVal("next contact") || getVal("nextContactAt")) || undefined,
+          connectionTypes: connectionTypes as ConnectionType[],
+          priority: normalizeEnum(getVal("priority"), priorityOptions) as any,
+          preferredContactMethod: normalizeEnum(getVal("contact method") || getVal("preferredContactMethod"), contactMethodOptions) as any,
+          linkedinUrl: optionalText(getVal("linkedin url") || getVal("linkedinUrl")) || undefined,
+          notes: optionalText(getVal("notes")) || undefined,
+          tags: (getVal("tags") || "").split(";").map(t => t.trim()).filter(Boolean),
+        };
+
+        try {
+          createContact(database, payload);
+          successCount++;
+        } catch (e) {
+          console.error("Failed to import row:", e);
+          errorCount++;
+        }
+      }
+
+      return {
+        successCount,
+        errorCount,
+        message: `Import complete: ${successCount} succeeded, ${errorCount} failed.`,
+      };
     },
   );
 

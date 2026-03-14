@@ -23,6 +23,28 @@ export function renderCrmPage(): string {
         --radius-xl: 28px;
         --radius-lg: 20px;
         --radius-md: 14px;
+        --input-bg: rgba(255, 255, 255, 0.88);
+        --card-hover: rgba(255, 247, 238, 0.95);
+        --history-bg: rgba(255, 255, 255, 0.58);
+      }
+
+      [data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #0b0e14;
+        --panel: rgba(19, 23, 31, 0.88);
+        --text: #f0f2f5;
+        --muted: #949eb0;
+        --line: rgba(255, 255, 255, 0.08);
+        --accent: #4fc3f7; /* Light Blue */
+        --accent-deep: #03a9f4;
+        --accent-soft: rgba(79, 195, 247, 0.12);
+        --sage: #81c784;
+        --gold: #ffd54f;
+        --danger: #ef5350;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+        --input-bg: rgba(30, 36, 48, 0.6);
+        --card-hover: rgba(30, 36, 48, 0.8);
+        --history-bg: rgba(30, 36, 48, 0.4);
       }
 
       * {
@@ -34,10 +56,22 @@ export function renderCrmPage(): string {
         min-height: 100vh;
         font-family: "Avenir Next", "Segoe UI", sans-serif;
         color: var(--text);
+        background: var(--bg);
+        background-attachment: fixed;
+      }
+
+      [data-theme='light'] body {
         background:
           radial-gradient(circle at top left, rgba(201, 146, 46, 0.18), transparent 30%),
           radial-gradient(circle at top right, rgba(95, 118, 97, 0.16), transparent 28%),
           linear-gradient(160deg, #f6f1e9 0%, #efe5d6 48%, #f8f3ec 100%);
+      }
+
+      [data-theme='dark'] body {
+        background:
+          radial-gradient(circle at top left, rgba(79, 195, 247, 0.08), transparent 35%),
+          radial-gradient(circle at top right, rgba(3, 169, 244, 0.05), transparent 30%),
+          #0b0e14;
       }
 
       body::before,
@@ -103,11 +137,12 @@ export function renderCrmPage(): string {
       }
 
       .hero-card h1 {
-        margin: 0;
+        margin: 16px 0 20px 0;
         font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
         font-size: clamp(2.4rem, 4vw, 4.5rem);
         line-height: 0.96;
         letter-spacing: -0.04em;
+        text-transform: uppercase;
       }
 
       .hero-card p {
@@ -139,26 +174,30 @@ export function renderCrmPage(): string {
         background: var(--accent);
       }
 
-      .hero-side {
-        padding: 24px;
-        background:
-          linear-gradient(180deg, rgba(255, 250, 241, 0.92), rgba(255, 250, 241, 0.74)),
-          linear-gradient(135deg, rgba(95, 118, 97, 0.16), rgba(191, 90, 54, 0.1));
+      .hero-desc {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, opacity 0.3s ease-out, margin 0.3s ease-out;
+        opacity: 0;
+        margin: 0;
       }
 
-      .hero-side h2,
-      .panel h2 {
-        margin: 0 0 10px;
-        font-size: 1rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+      .hero-desc.expanded {
+        max-height: 200px;
+        opacity: 1;
+        margin: 18px 0 0;
       }
 
-      .hero-side ul {
-        padding-left: 18px;
-        margin: 16px 0 0;
-        color: var(--muted);
-        line-height: 1.7;
+      .desc-toggle {
+        background: none;
+        border: none;
+        color: var(--accent);
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0;
+        margin-top: 12px;
+        text-decoration: underline;
+        font-weight: 500;
       }
 
       .stats {
@@ -238,7 +277,7 @@ export function renderCrmPage(): string {
         padding: 12px 14px;
         font: inherit;
         color: var(--text);
-        background: rgba(255, 255, 255, 0.88);
+        background: var(--input-bg);
         transition: border-color 180ms ease, box-shadow 180ms ease;
       }
 
@@ -262,7 +301,7 @@ export function renderCrmPage(): string {
         padding: 14px;
         border-radius: 14px;
         border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.5);
+        background: var(--input-bg);
       }
 
       .check {
@@ -320,8 +359,29 @@ export function renderCrmPage(): string {
       }
 
       button:disabled {
-        opacity: 0.72;
-        cursor: wait;
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 0.88rem;
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        cursor: pointer;
+        transition: background 180ms ease;
+        box-shadow: none;
+      }
+
+      .theme-toggle:hover {
+        background: var(--card-hover);
+        transform: none;
+        box-shadow: none;
       }
 
       .button-ghost {
@@ -401,8 +461,8 @@ export function renderCrmPage(): string {
       }
 
       .contact-card.selected {
-        border-color: rgba(191, 90, 54, 0.35);
-        background: rgba(255, 247, 238, 0.95);
+        border-color: var(--accent);
+        background: var(--card-hover);
       }
 
       .contact-head {
@@ -436,18 +496,18 @@ export function renderCrmPage(): string {
       }
 
       .due-pill.overdue {
-        background: rgba(191, 90, 54, 0.14);
+        background: var(--accent-soft);
         color: var(--accent-deep);
       }
 
       .due-pill.soon {
         background: rgba(201, 146, 46, 0.16);
-        color: #8a6116;
+        color: var(--gold);
       }
 
       .due-pill.steady {
         background: rgba(95, 118, 97, 0.15);
-        color: #426046;
+        color: var(--sage);
       }
 
       .stack {
@@ -541,6 +601,57 @@ export function renderCrmPage(): string {
         color: var(--muted);
       }
 
+      .tag-chip {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .tag-chip.removable {
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .tag-chip.removable:hover {
+        background: var(--danger);
+        color: white;
+        border-color: var(--danger);
+      }
+
+      .tag-input-wrapper {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .tag-input-wrapper input {
+        flex: 1;
+      }
+
+      .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+        min-height: 20px;
+      }
+
+      .tag-error {
+        color: var(--danger);
+        font-size: 12px;
+        margin-top: 4px;
+        display: none;
+      }
+
       .history-list {
         display: grid;
         gap: 10px;
@@ -549,8 +660,8 @@ export function renderCrmPage(): string {
       .history-item {
         padding: 12px 14px;
         border-radius: 16px;
-        background: rgba(255, 255, 255, 0.58);
-        border: 1px solid rgba(43, 52, 69, 0.08);
+        background: var(--history-bg);
+        border: 1px solid var(--line);
       }
 
       .history-item strong {
@@ -643,23 +754,22 @@ export function renderCrmPage(): string {
   </head>
   <body>
     <main class="shell">
-      <section class="hero">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-icon">🌙</span>
+          <span id="theme-toggle-text">Dark Mode</span>
+        </button>
+      </div>
+      <section class="hero" style="grid-template-columns: 1fr;">
         <article class="hero-card">
-          <span class="hero-badge">Relationship CRM</span>
+          <span class="hero-badge">ANDREW'S RELATIONSHIP CRM</span>
           <h1>Keep your people warm, not just your pipeline.</h1>
-          <p>
+          <button type="button" class="desc-toggle" id="desc-toggle" aria-expanded="false">Show description</button>
+          <p class="hero-desc" id="hero-desc">
             A simple, clean workspace for tracking personal and business relationships. Capture who
             they are, how you know them, when you last reached out, and who needs follow-up next.
           </p>
         </article>
-        <aside class="hero-card hero-side">
-          <h2>What this version is built for</h2>
-          <ul>
-            <li>Quick entry for contacts without heavy CRM overhead</li>
-            <li>Focused detail view for editing a person, not just scanning a list</li>
-            <li>Interaction history so follow-ups become a timeline instead of one overwritten date</li>
-          </ul>
-        </aside>
       </section>
 
       <section class="stats" id="stats">
@@ -787,22 +897,18 @@ export function renderCrmPage(): string {
               </div>
             </div>
 
+            </div>
+
             <div class="section-grid">
               <label>
-                Last interaction summary
-                <input
-                  name="lastInteractionSummary"
-                  maxlength="280"
-                  placeholder="Met at the chamber breakfast and discussed a referral intro."
-                />
-              </label>
-              <label>
-                Notes
-                <textarea
-                  name="notes"
-                  maxlength="2000"
-                  placeholder="Personal details, reminders, open loops, interests, family, client context..."
-                ></textarea>
+                Tags (Arbitrary)
+                <div class="helper">Enter up to 15 characters per tag. Press Enter to add.</div>
+                <div class="tags-container js-form-tags"></div>
+                <div class="tag-input-wrapper">
+                  <input class="js-new-tag-input" maxlength="15" placeholder="Add a tag..." />
+                  <button type="button" class="js-add-tag-btn secondary-btn">Add</button>
+                </div>
+                <div class="tag-error js-tag-error">Tag must be 15 characters or less</div>
               </label>
             </div>
 
@@ -833,6 +939,15 @@ export function renderCrmPage(): string {
               <div class="search-box">
                 <input type="text" id="contact-search" placeholder="Search by name, company, email..." aria-label="Search contacts" />
               </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="export-csv" class="button-ghost" style="padding: 8px 12px; font-size: 0.82rem;">
+                  Export CSV
+                </button>
+                <button type="button" id="import-csv" class="button-ghost" style="padding: 8px 12px; font-size: 0.82rem;">
+                  Import CSV
+                </button>
+                <input type="file" id="csv-file-input" accept=".csv" style="display: none;" />
+              </div>
             </div>
             <div class="list" id="contact-list"></div>
             <div class="empty-state hidden" id="empty-state">
@@ -851,7 +966,10 @@ export function renderCrmPage(): string {
         detailMessage: "",
         detailTone: "",
         searchQuery: "",
+        theme: localStorage.getItem('theme') || 'light',
       };
+
+      console.log("CRM Script initializing...");
 
       const form = document.getElementById("contact-form");
       const submitButton = document.getElementById("submit-button");
@@ -861,6 +979,12 @@ export function renderCrmPage(): string {
       const detailPanel = document.getElementById("detail-panel");
       const statNodes = document.querySelectorAll("[data-stat]");
       const searchInput = document.getElementById("contact-search");
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeIcon = document.getElementById("theme-toggle-icon");
+      const themeText = document.getElementById("theme-toggle-text");
+      const exportButton = document.getElementById("export-csv");
+      const importButton = document.getElementById("import-csv");
+      const csvFileInput = document.getElementById("csv-file-input");
 
       const formatDate = (value) => {
         if (!value) {
@@ -875,6 +999,23 @@ export function renderCrmPage(): string {
       };
 
       const todayInputValue = () => new Date().toISOString().slice(0, 10);
+
+      const applyTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        state.theme = theme;
+        localStorage.setItem('theme', theme);
+        
+        if (theme === 'dark') {
+          themeIcon.textContent = '☀️';
+          themeText.textContent = 'Light Mode';
+        } else {
+          themeIcon.textContent = '🌙';
+          themeText.textContent = 'Dark Mode';
+        }
+      };
+
+      // Initial theme apply
+      applyTheme(state.theme);
 
       const titleCase = (value) =>
         value
@@ -1017,6 +1158,10 @@ export function renderCrmPage(): string {
             );
           }
 
+          (contact.tags || []).forEach((tag) => {
+            chips.push('<span class="tag-chip">' + escapeHtml(tag) + "</span>");
+          });
+
           card.className =
             "contact-card" + (contact.id === state.selectedContactId ? " selected" : "");
           card.dataset.contactId = contact.id;
@@ -1031,7 +1176,7 @@ export function renderCrmPage(): string {
                 "</div>" +
               "</div>" +
               '<div class="due-pill ' +
-              due.tone +
+              escapeHtml(due.tone) +
               '">' +
               escapeHtml(due.label) +
               "</div>" +
@@ -1256,6 +1401,19 @@ export function renderCrmPage(): string {
                 '<label>Notes<textarea name="notes" maxlength="2000">' +
                   escapeHtml(contact.notes || "") +
                 "</textarea></label>" +
+                '<label>Tags (Arbitrary) <div class="helper">Enter up to 15 characters per tag. Press Enter to add.</div>' +
+                  '<div class="tags-container js-form-tags">' +
+                    (contact.tags || []).map(tag => 
+                      '<span class="tag-chip removable" data-tag="' + escapeHtml(tag) + '">' + 
+                        escapeHtml(tag) + ' &times;</span>'
+                    ).join("") +
+                  '</div>' +
+                  '<div class="tag-input-wrapper">' +
+                    '<input class="js-new-tag-input" maxlength="15" placeholder="Add a tag..." />' +
+                    '<button type="button" class="js-add-tag-btn secondary-btn">Add</button>' +
+                  '</div>' +
+                  '<div class="tag-error js-tag-error">Tag must be 15 characters or less</div>' +
+                "</label>" +
               "</div>" +
               '<div class="actions">' +
                 '<div class="helper">Editing here updates the current contact record. Logging a follow-up below adds to history.</div>' +
@@ -1303,14 +1461,20 @@ export function renderCrmPage(): string {
       };
 
       const fetchContacts = async (preferredSelectedId) => {
-        const response = await fetch("/api/contacts");
-        if (!response.ok) {
-          throw new Error("Failed to load contacts");
-        }
+        try {
+          const response = await fetch("/api/contacts");
+          if (!response.ok) {
+            const errBody = await response.json().catch(() => ({}));
+            throw new Error(errBody.message || ("Failed to load contacts (" + response.status + ")"));
+          }
 
-        const payload = await response.json();
-        state.contacts = payload.items;
-        renderStats(payload.summary);
+          const payload = await response.json();
+          state.contacts = payload.items;
+          renderStats(payload.summary);
+        } catch (error) {
+          console.error("Fetch error:", error);
+          throw error;
+        }
 
         const targetId =
           preferredSelectedId ||
@@ -1356,6 +1520,9 @@ export function renderCrmPage(): string {
           lastInteractionSummary: String(formData.get("lastInteractionSummary") || "").trim(),
           linkedinUrl: String(formData.get("linkedinUrl") || "").trim(),
           connectionTypes: formData.getAll("connectionTypes").map(String),
+          tags: Array.from(formNode.querySelectorAll(".js-form-tags .tag-chip")).map(
+            (el) => el.dataset.tag || "",
+          ).filter(Boolean),
         };
 
         Object.keys(payload).forEach((key) => {
@@ -1386,6 +1553,25 @@ export function renderCrmPage(): string {
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         setFormStatus("", "");
+
+        const payload = createPayloadFromForm(form, "create");
+
+        // Deduplication Check
+        const existingContact = state.contacts.find(
+          (c) => 
+            c.firstName.toLowerCase() === payload.firstName.toLowerCase() && 
+            c.lastName.toLowerCase() === payload.lastName.toLowerCase()
+        );
+
+        if (existingContact) {
+          setFormStatus(
+            "A contact named " + escapeHtml(payload.firstName + " " + payload.lastName) + 
+            " already exists. Please update the existing contact on the board.", 
+            "error"
+          );
+          return;
+        }
+
         submitButton.disabled = true;
         submitButton.textContent = "Saving...";
 
@@ -1395,7 +1581,7 @@ export function renderCrmPage(): string {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(createPayloadFromForm(form, "create")),
+            body: JSON.stringify(payload),
           });
 
           if (!response.ok) {
@@ -1405,6 +1591,10 @@ export function renderCrmPage(): string {
 
           const contact = await response.json();
           form.reset();
+          const tagsContainer = form.querySelector(".js-form-tags");
+          if (tagsContainer) {
+            tagsContainer.innerHTML = "";
+          }
           setFormStatus("Contact saved. The relationship board is up to date.", "success");
           state.detailMessage = "";
           state.detailTone = "";
@@ -1420,6 +1610,76 @@ export function renderCrmPage(): string {
       searchInput.addEventListener("input", (event) => {
         state.searchQuery = event.target.value;
         renderBoard();
+      });
+
+      themeToggle.addEventListener("click", () => {
+        const nextTheme = state.theme === 'light' ? 'dark' : 'light';
+        applyTheme(nextTheme);
+      });
+
+      exportButton.addEventListener("click", async () => {
+        try {
+          const response = await fetch("/api/contacts/export");
+          if (!response.ok) throw new Error("Export failed");
+          
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "contacts-" + new Date().toISOString().slice(0, 10) + ".csv";
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        } catch (error) {
+          console.error("Export error:", error);
+          alert("Failed to export contacts. Check console for details.");
+        }
+      });
+
+      importButton.addEventListener("click", () => {
+        csvFileInput.click();
+      });
+
+      csvFileInput.addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const csv = e.target?.result;
+          if (typeof csv !== "string") return;
+
+          try {
+            importButton.disabled = true;
+            importButton.textContent = "Importing...";
+            
+            const response = await fetch("/api/contacts/import", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ csv }),
+            });
+
+            if (!response.ok) {
+              const err = await response.json().catch(() => ({ message: "Server error during import" }));
+              throw new Error(err.message || "Failed to import contacts");
+            }
+
+            const result = await response.json();
+            alert(result.message || "Import complete.");
+            
+            // Refresh list using the existing helper which handles the { items, summary } wrapper
+            await fetchContacts();
+          } catch (error) {
+            console.error("Import error:", error);
+            alert(error.message || "Failed to import contacts. Ensure the CSV format is correct.");
+          } finally {
+            importButton.disabled = false;
+            importButton.textContent = "Import CSV";
+            csvFileInput.value = ""; // Clear for next use
+          }
+        };
+        reader.readAsText(file);
       });
 
       contactList.addEventListener("click", async (event) => {
@@ -1554,9 +1814,76 @@ export function renderCrmPage(): string {
         }
       });
 
+      // Tag input logic
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t.classList.contains("js-add-tag-btn")) {
+          addTag(t);
+        } else if (t.classList.contains("removable") && t.closest(".js-form-tags")) {
+          t.remove();
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        const t = e.target;
+        if (e.key === "Enter" && t.classList.contains("js-new-tag-input")) {
+          e.preventDefault();
+          addTag(t);
+        }
+      });
+
+      function addTag(triggerEl) {
+        const form = triggerEl.closest("form");
+        if (!form) return;
+        
+        const input = form.querySelector(".js-new-tag-input");
+        const container = form.querySelector(".js-form-tags");
+        const error = form.querySelector(".js-tag-error");
+        if (!input || !container || !error) return;
+
+        const val = input.value.trim();
+        if (!val) return;
+
+        if (val.length > 15) {
+          error.style.display = "block";
+          return;
+        }
+
+        error.style.display = "none";
+        
+        const existing = Array.from(container.querySelectorAll(".tag-chip")).map(el => el.dataset.tag);
+        if (existing.includes(val)) {
+          input.value = "";
+          return;
+        }
+
+        const tag = document.createElement("span");
+        tag.className = "tag-chip removable";
+        tag.dataset.tag = val;
+        tag.innerHTML = escapeHtml(val) + " &times;";
+        container.appendChild(tag);
+        input.value = "";
+      }
+
       document.addEventListener("click", async (event) => {
         const target = event.target;
         if (!(target instanceof HTMLElement)) {
+          return;
+        }
+
+        if (target.id === "desc-toggle") {
+          const desc = document.getElementById("hero-desc");
+          const isExpanded = desc.classList.contains("expanded");
+          
+          if (isExpanded) {
+            desc.classList.remove("expanded");
+            target.textContent = "Show description";
+            target.setAttribute("aria-expanded", "false");
+          } else {
+            desc.classList.add("expanded");
+            target.textContent = "Hide description";
+            target.setAttribute("aria-expanded", "true");
+          }
           return;
         }
 
