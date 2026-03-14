@@ -23,6 +23,28 @@ export function renderCrmPage(): string {
         --radius-xl: 28px;
         --radius-lg: 20px;
         --radius-md: 14px;
+        --input-bg: rgba(255, 255, 255, 0.88);
+        --card-hover: rgba(255, 247, 238, 0.95);
+        --history-bg: rgba(255, 255, 255, 0.58);
+      }
+
+      [data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #0b0e14;
+        --panel: rgba(19, 23, 31, 0.88);
+        --text: #f0f2f5;
+        --muted: #949eb0;
+        --line: rgba(255, 255, 255, 0.08);
+        --accent: #4fc3f7; /* Light Blue */
+        --accent-deep: #03a9f4;
+        --accent-soft: rgba(79, 195, 247, 0.12);
+        --sage: #81c784;
+        --gold: #ffd54f;
+        --danger: #ef5350;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+        --input-bg: rgba(30, 36, 48, 0.6);
+        --card-hover: rgba(30, 36, 48, 0.8);
+        --history-bg: rgba(30, 36, 48, 0.4);
       }
 
       * {
@@ -34,10 +56,22 @@ export function renderCrmPage(): string {
         min-height: 100vh;
         font-family: "Avenir Next", "Segoe UI", sans-serif;
         color: var(--text);
+        background: var(--bg);
+        background-attachment: fixed;
+      }
+
+      [data-theme='light'] body {
         background:
           radial-gradient(circle at top left, rgba(201, 146, 46, 0.18), transparent 30%),
           radial-gradient(circle at top right, rgba(95, 118, 97, 0.16), transparent 28%),
           linear-gradient(160deg, #f6f1e9 0%, #efe5d6 48%, #f8f3ec 100%);
+      }
+
+      [data-theme='dark'] body {
+        background:
+          radial-gradient(circle at top left, rgba(79, 195, 247, 0.08), transparent 35%),
+          radial-gradient(circle at top right, rgba(3, 169, 244, 0.05), transparent 30%),
+          #0b0e14;
       }
 
       body::before,
@@ -141,6 +175,11 @@ export function renderCrmPage(): string {
 
       .hero-side {
         padding: 24px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+      }
+
+      [data-theme='light'] .hero-side {
         background:
           linear-gradient(180deg, rgba(255, 250, 241, 0.92), rgba(255, 250, 241, 0.74)),
           linear-gradient(135deg, rgba(95, 118, 97, 0.16), rgba(191, 90, 54, 0.1));
@@ -238,7 +277,7 @@ export function renderCrmPage(): string {
         padding: 12px 14px;
         font: inherit;
         color: var(--text);
-        background: rgba(255, 255, 255, 0.88);
+        background: var(--input-bg);
         transition: border-color 180ms ease, box-shadow 180ms ease;
       }
 
@@ -262,7 +301,7 @@ export function renderCrmPage(): string {
         padding: 14px;
         border-radius: 14px;
         border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.5);
+        background: var(--input-bg);
       }
 
       .check {
@@ -320,8 +359,29 @@ export function renderCrmPage(): string {
       }
 
       button:disabled {
-        opacity: 0.72;
-        cursor: wait;
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 0.88rem;
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        cursor: pointer;
+        transition: background 180ms ease;
+        box-shadow: none;
+      }
+
+      .theme-toggle:hover {
+        background: var(--card-hover);
+        transform: none;
+        box-shadow: none;
       }
 
       .button-ghost {
@@ -401,8 +461,8 @@ export function renderCrmPage(): string {
       }
 
       .contact-card.selected {
-        border-color: rgba(191, 90, 54, 0.35);
-        background: rgba(255, 247, 238, 0.95);
+        border-color: var(--accent);
+        background: var(--card-hover);
       }
 
       .contact-head {
@@ -436,18 +496,18 @@ export function renderCrmPage(): string {
       }
 
       .due-pill.overdue {
-        background: rgba(191, 90, 54, 0.14);
+        background: var(--accent-soft);
         color: var(--accent-deep);
       }
 
       .due-pill.soon {
         background: rgba(201, 146, 46, 0.16);
-        color: #8a6116;
+        color: var(--gold);
       }
 
       .due-pill.steady {
         background: rgba(95, 118, 97, 0.15);
-        color: #426046;
+        color: var(--sage);
       }
 
       .stack {
@@ -549,8 +609,8 @@ export function renderCrmPage(): string {
       .history-item {
         padding: 12px 14px;
         border-radius: 16px;
-        background: rgba(255, 255, 255, 0.58);
-        border: 1px solid rgba(43, 52, 69, 0.08);
+        background: var(--history-bg);
+        border: 1px solid var(--line);
       }
 
       .history-item strong {
@@ -643,6 +703,12 @@ export function renderCrmPage(): string {
   </head>
   <body>
     <main class="shell">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-icon">🌙</span>
+          <span id="theme-toggle-text">Dark Mode</span>
+        </button>
+      </div>
       <section class="hero">
         <article class="hero-card">
           <span class="hero-badge">Relationship CRM</span>
@@ -851,6 +917,7 @@ export function renderCrmPage(): string {
         detailMessage: "",
         detailTone: "",
         searchQuery: "",
+        theme: localStorage.getItem('theme') || 'light',
       };
 
       const form = document.getElementById("contact-form");
@@ -861,6 +928,9 @@ export function renderCrmPage(): string {
       const detailPanel = document.getElementById("detail-panel");
       const statNodes = document.querySelectorAll("[data-stat]");
       const searchInput = document.getElementById("contact-search");
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeIcon = document.getElementById("theme-toggle-icon");
+      const themeText = document.getElementById("theme-toggle-text");
 
       const formatDate = (value) => {
         if (!value) {
@@ -875,6 +945,23 @@ export function renderCrmPage(): string {
       };
 
       const todayInputValue = () => new Date().toISOString().slice(0, 10);
+
+      const applyTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        state.theme = theme;
+        localStorage.setItem('theme', theme);
+        
+        if (theme === 'dark') {
+          themeIcon.textContent = '☀️';
+          themeText.textContent = 'Light Mode';
+        } else {
+          themeIcon.textContent = '🌙';
+          themeText.textContent = 'Dark Mode';
+        }
+      };
+
+      // Initial theme apply
+      applyTheme(state.theme);
 
       const titleCase = (value) =>
         value
@@ -1420,6 +1507,11 @@ export function renderCrmPage(): string {
       searchInput.addEventListener("input", (event) => {
         state.searchQuery = event.target.value;
         renderBoard();
+      });
+
+      themeToggle.addEventListener("click", () => {
+        const nextTheme = state.theme === 'light' ? 'dark' : 'light';
+        applyTheme(nextTheme);
       });
 
       contactList.addEventListener("click", async (event) => {
