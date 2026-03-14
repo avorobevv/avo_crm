@@ -1,72 +1,48 @@
-# Personal CRM
+# Andrew's Personal CRM
 
-A lightweight personal CRM that can be launched directly from the terminal using the `personal-crm` command.
+A lightweight, self-hosted CRM for managing personal and business relationships. Built with **TypeScript**, **Fastify**, and **SQLite**.
 
-## Overview
+## Features
 
-This project provides a simple command-line entry point to open and run the Personal CRM application.  
-After adding the project’s `bin` directory to your PATH, you can start the CRM from anywhere in your terminal.
+- **Contact management** — Add, edit, and delete contacts with details like company, title, email, phone, LinkedIn, and more
+- **Relationship board** — Visual dashboard sorted by next follow-up date
+- **Follow-up tracking** — Log interactions and get smart next-touch suggestions based on connection type and priority
+- **Tags** — Arbitrary tags (up to 15 characters each) for flexible categorization
+- **Dark mode** — Toggle between light and dark themes
+- **CSV import/export** — Bulk manage contacts via CSV with semicolon-delimited tags
+- **Search** — Live-search contacts by name, company, or email
+- **Deduplication** — Prevents creating contacts with duplicate names
 
-## Setup
-
-Clone the repository:
+## Quick Start
 
 ```bash
-   git clone [https://github.com/avorobevv/avo_crm.git](https://github.com/avorobevv/avo_crm.git)
-   cd avo_crm/personal_crm
-```
-
-Install dependencies:
-```bash
+cd personal_crm
 npm install
+npm run dev
 ```
 
-Add the project's `bin` directory to your shell PATH:
-
-```bash
-echo "export PATH=\"$(pwd)/bin:\$PATH\"" >> ~/.zshrc
-source ~/.zshrc
-```
-
-## Usage
-
-Once the PATH is configured, you can launch the CRM from anywhere in your terminal:
-
-```bash
-personal-crm dev
-```
-
-The application will be accessible at http://127.0.0.1:8000.
+The CRM will be available at [http://localhost:8000](http://localhost:8000).
 
 ## Project Structure
 
 ```
 personal_crm/
-├── bin/
-│   └── personal-crm
-├── README.md
-└── ...
+├── bin/personal-crm    # CLI launcher script
+├── src/
+│   ├── app.ts          # Backend: API routes, database, schemas
+│   ├── frontend.ts     # Frontend: full HTML/CSS/JS rendered server-side
+│   └── server.ts       # Server entry point
+├── package.json
+└── tsconfig.json
 ```
 
-## Requirements
+## Tech Stack
 
-- Node.js (v22.0.0 or higher)
-- macOS / Linux terminal
-- zsh or compatible shell
-
-## Troubleshooting
-
-If the command is not recognized, confirm your PATH is updated:
-
-```bash
-echo $PATH
-```
-
-You should see:
-
-```
-/Users/avorobev/projects/personal_crm/bin
-```
+- **Runtime**: Node.js 22+
+- **Framework**: Fastify
+- **Database**: SQLite (via `node:sqlite`)
+- **Validation**: TypeBox
+- **Frontend**: Server-rendered HTML with vanilla JS
 
 "Cannot find module '.../dist/server.js'": This occurs if you run personal-crm without building the project. Use personal-crm dev instead, or run npm run build first.
 

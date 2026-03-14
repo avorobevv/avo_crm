@@ -3,8 +3,10 @@ export function renderCrmPage(): string {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Relationship CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Personal CRM</title>
+
+    <!-- ─── Styles ──────────────────────────────────────────────────────── -->
     <style>
       :root {
         color-scheme: light;
@@ -752,6 +754,8 @@ export function renderCrmPage(): string {
       }
     </style>
   </head>
+
+  <!-- ─── HTML Structure ──────────────────────────────────────────────── -->
   <body>
     <main class="shell">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
@@ -959,6 +963,7 @@ export function renderCrmPage(): string {
       </section>
     </main>
 
+    <!-- ─── Client-Side Script ──────────────────────────────────────── -->
     <script>
       const state = {
         contacts: [],
@@ -1017,6 +1022,8 @@ export function renderCrmPage(): string {
       // Initial theme apply
       applyTheme(state.theme);
 
+      // ─── Formatting Helpers ─────────────────────────────────────────
+
       const titleCase = (value) =>
         value
           .split(" ")
@@ -1062,6 +1069,8 @@ export function renderCrmPage(): string {
         state.detailTone = tone;
         renderDetail();
       };
+
+      // ─── Rendering Functions ────────────────────────────────────────
 
       const renderStats = (summary) => {
         statNodes.forEach((node) => {
@@ -1451,6 +1460,8 @@ export function renderCrmPage(): string {
           "</div>";
       };
 
+      // ─── State Management & API ─────────────────────────────────────
+
       const replaceContact = (contact) => {
         const index = state.contacts.findIndex((item) => item.id === contact.id);
         if (index === -1) {
@@ -1549,6 +1560,8 @@ export function renderCrmPage(): string {
 
         return payload;
       };
+
+      // ─── Event Listeners & Form Handlers ────────────────────────────
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -1814,7 +1827,8 @@ export function renderCrmPage(): string {
         }
       });
 
-      // Tag input logic
+      // ─── Tag Input Logic ────────────────────────────────────────────
+
       document.addEventListener("click", (e) => {
         const t = e.target;
         if (t.classList.contains("js-add-tag-btn")) {

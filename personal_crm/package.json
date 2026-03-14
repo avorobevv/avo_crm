@@ -1,8 +1,8 @@
 {
-  "name": "ts-fastapi-backend",
+  "name": "personal-crm",
   "version": "0.1.0",
   "private": true,
-  "description": "A FastAPI-style TypeScript backend with Fastify, Docker, pytest, pre-commit, and GitHub Actions.",
+  "description": "A lightweight personal CRM for managing contacts, follow-ups, and relationships.",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
